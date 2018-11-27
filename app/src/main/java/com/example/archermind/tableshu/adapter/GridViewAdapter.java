@@ -1,10 +1,12 @@
 package com.example.archermind.tableshu.adapter;
 
-import android.view.Gravity;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.TextView;
+
+import com.example.archermind.tableshu.R;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,11 +20,16 @@ public class GridViewAdapter extends BaseAdapter {
     private List<Integer> datas = new ArrayList<>();
     private int mItemHeight;
 
+    public void setItemHeight(int itemHeight) {
+        mItemHeight = itemHeight;
+    }
+
     public GridViewAdapter(int itemHeight) {
         mItemHeight = itemHeight;
     }
 
-    public void addData(List<Integer> data) {
+    public void setData(List<Integer> data) {
+        datas.clear();
         datas.addAll(data);
         notifyDataSetChanged();
     }
@@ -44,12 +51,13 @@ public class GridViewAdapter extends BaseAdapter {
 
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
-        TextView textView = new TextView(parent.getContext());
-        ViewGroup.LayoutParams layoutParams =
-                new ViewGroup.LayoutParams(mItemHeight, mItemHeight);
-        textView.setLayoutParams(layoutParams);
-        textView.setGravity(Gravity.CENTER);
-        textView.setText(String.valueOf(datas.get(position)));
-        return textView;
+        if(convertView == null){
+            ViewGroup.LayoutParams layoutParams =
+                    new ViewGroup.LayoutParams(mItemHeight, mItemHeight);
+            convertView = LayoutInflater.from(parent.getContext()).inflate(R.layout.adapater_item, parent, false);
+            convertView.setLayoutParams(layoutParams);
+        }
+        ((TextView)convertView.findViewById(R.id.tv_item)).setText(String.valueOf(datas.get(position)));
+        return convertView;
     }
 }
