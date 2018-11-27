@@ -1,3 +1,6 @@
 <resources>
     <string name="app_name">TableShu</string>
+    <string name="game_brief">Hello, 欢迎来到注意力挑战</string>
+    <string name="game_rule">很简单：\n\n在规定的时间内，顺序挨个点击数字 \n 点完没超时你就赢了!</string>
+    <string name="go">Go</string>
 </resources>

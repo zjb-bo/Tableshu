@@ -1,6 +1,8 @@
 package com.example.archermind.tableshu.activity;
 
+import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
@@ -143,5 +145,11 @@ public class MainActivity extends AppCompatActivity {
         layoutParams.height = measured;
         mGridView.setLayoutParams(layoutParams);
         mItemHeight = measured / count;
+    }
+
+
+    public static void start(Context context) {
+        Intent starter = new Intent(context, MainActivity.class);
+        context.startActivity(starter);
     }
 }
