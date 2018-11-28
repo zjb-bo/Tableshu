@@ -13,7 +13,7 @@ public class RuleCheck {
 
     private static volatile RuleCheck mRuleCheck;
     private List<Integer> datas = new ArrayList<>();
-    private int mCar = 5;
+    private int mCar = 3;
 
     private RuleCheck() {
     }

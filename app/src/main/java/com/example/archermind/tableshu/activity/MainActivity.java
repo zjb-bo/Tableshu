@@ -1,34 +1,34 @@
 package com.example.archermind.tableshu.activity;
 
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
-import android.support.v7.app.AlertDialog;
+import android.os.CountDownTimer;
 import android.support.v7.app.AppCompatActivity;
+import android.view.LayoutInflater;
 import android.view.View;
-import android.view.ViewGroup;
-import android.widget.AdapterView;
-import android.widget.GridView;
 import android.widget.TextView;
 
 import com.example.archermind.tableshu.R;
-import com.example.archermind.tableshu.adapter.GridViewAdapter;
 import com.example.archermind.tableshu.logic.NumCreateTool;
 import com.example.archermind.tableshu.logic.RuleCheck;
+import com.example.archermind.tableshu.logic.TimerLogic;
+import com.example.archermind.tableshu.ui.DialogUI;
+import com.example.archermind.tableshu.view.CellGroupView;
+import com.example.archermind.tableshu.view.CellView;
 
 import java.util.List;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements DialogUI.DialogListener {
 
-    GridView mGridView;
-    TextView mTextView;
     TextView mTvCurrent;
-    int count = 5;
-    GridViewAdapter mGridViewAdapter;
+    TextView mCountTime;
+    TextView mCarView;
+    int countCar = 3;
+    final int startCountCar = 2;
 
-    int mItemHeight;
     private List<Integer> mDatas;
+    private CellGroupView mCellGroupView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -36,120 +36,94 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         initView();
-        initData();
+        setData();
+        startTimer();
     }
 
+    private void startTimer() {
+        TimerLogic.getInstance().startTimer(new CountDownTimer((countCar * 5 + countCar)*1000, 1000) {
+            @Override
+            public void onTick(long millisUntilFinished) {
+                mCountTime.setText("倒计时："+(millisUntilFinished/1000)+"s");
+            }
+
+            @Override
+            public void onFinish() {
+                mCountTime.setText("倒计时：0s");
+                DialogUI.showFinishDialog(MainActivity.this, "You Loosed!",
+                        "Time Out!", MainActivity.this);
+            }
+        });
+    }
 
     private void initView() {
-        mGridView = (GridView) findViewById(R.id.grid_view);
         mTvCurrent = (TextView) findViewById(R.id.tv_current);
-        mGridView.setNumColumns(count);
-        mGridView.post(new Runnable() {
-            @Override
-            public void run() {
-                setSize();
-                mGridViewAdapter = new GridViewAdapter(mItemHeight);
-                mGridView.setAdapter(mGridViewAdapter);
-                setData();
-            }
-        });
+        mCountTime = (TextView) findViewById(R.id.countTimer);
+        mCarView = (TextView) findViewById(R.id.carTextView);
+        mCellGroupView = (CellGroupView) findViewById(R.id.cellviewgroup);
+        mCellGroupView.removeAllViews();
     }
 
-    private void initData() {
-        mGridView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                Integer integer = mDatas.get(position);
-                RuleCheck.getInstance().eachClickRuleCheck(integer, new RuleCheck.RuleCheckResultListener() {
-                    @Override
-                    public void fail() {
-                        showFinishDialog("You Loosed!", "You have do wrong click, have retry !");
-                    }
-
-                    @Override
-                    public void success() {
-                        showWinDialog("You Win!!!", " Configures You!");
-                    }
-                });
-                mTvCurrent.setText(String.valueOf(integer));
-            }
-        });
-    }
-
-    private void showFinishDialog(String title, String msg) {
-        new AlertDialog.Builder(this)
-                .setTitle(title)
-                .setCancelable(false)
-                .setMessage(msg)
-                .setPositiveButton("Retry Go", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        gameRestart();
-                    }
-                })
-                .setNegativeButton("Exit Bye", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-
-                    }
-                })
-                .create()
-                .show();
-    }
-
-    private void showWinDialog(String title, String msg) {
-        new AlertDialog.Builder(this)
-                .setTitle(title)
-                .setCancelable(false)
-                .setMessage(msg)
-                .setPositiveButton("Next", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        nextCar();
-                    }
-                })
-                .setNegativeButton("Retry", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        gameRestart();
-                    }
-                })
-                .create()
-                .show();
-    }
-
-    private void nextCar() {
-        count ++;
-        gameRestart();
-
-    }
-
-    private void gameRestart(){
+    @Override
+    public void restartGame() {
         RuleCheck.getInstance().resetData();
-        RuleCheck.getInstance().setCar(count);
+        RuleCheck.getInstance().setCar(countCar);
         mTvCurrent.setText("GO");
-        mItemHeight = mGridView.getMeasuredHeight() / count;
-        mGridViewAdapter.setItemHeight(mItemHeight);
+        mCarView.setText("第"+(countCar - startCountCar)+"关");
         setData();
+        startTimer();
+    }
+
+    @Override
+    public void nextCar() {
+        countCar++;
+        restartGame();
+
     }
 
     private void setData() {
-        mDatas = NumCreateTool.getInstance().createRandomNum(count);
-        mGridViewAdapter.setData(mDatas);
+        RuleCheck.getInstance().resetData();
+        mDatas = NumCreateTool.getInstance().createRandomNum(countCar);
+        RuleCheck.getInstance().setCar(countCar);
+        mCellGroupView.removeAllViews();
+        mCellGroupView.setColumn(countCar);
+        for (int i = 0; i < mDatas.size(); i++) {
+            final CellView cellView = (CellView) LayoutInflater.from(this).inflate(R.layout.celleview_layout, mCellGroupView,false);
+            cellView.setText(String.valueOf(mDatas.get(i)));
+            mCellGroupView.addView(cellView);
+            cellView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    Integer integer = Integer.valueOf(cellView.getText().toString());
+                    RuleCheck.getInstance().eachClickRuleCheck(integer, new RuleCheck.RuleCheckResultListener() {
+                        @Override
+                        public void fail() {
+                            TimerLogic.getInstance().cancleTimer();
+                            DialogUI.showFinishDialog(MainActivity.this, "You Loosed!",
+                                    "You have do wrong click, have retry !", MainActivity.this);
+                        }
+
+                        @Override
+                        public void success() {
+                            TimerLogic.getInstance().cancleTimer();
+                            DialogUI.showWinDialog(MainActivity.this, "You Win!!!", " Configures You!", MainActivity.this);
+                        }
+                    });
+                    mTvCurrent.setText(String.valueOf(integer));
+                }
+            });
+        }
     }
-
-
-    private void setSize() {
-        int measured = mGridView.getMeasuredWidth();
-        ViewGroup.LayoutParams layoutParams = mGridView.getLayoutParams();
-        layoutParams.height = measured;
-        mGridView.setLayoutParams(layoutParams);
-        mItemHeight = measured / count;
-    }
-
 
     public static void start(Context context) {
         Intent starter = new Intent(context, MainActivity.class);
         context.startActivity(starter);
+    }
+
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        TimerLogic.getInstance().cancleTimer();
     }
 }
