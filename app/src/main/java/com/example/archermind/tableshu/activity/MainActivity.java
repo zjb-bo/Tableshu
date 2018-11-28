@@ -2,13 +2,18 @@ package com.example.archermind.tableshu.activity;
 
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.support.v7.app.AppCompatActivity;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
+import android.view.animation.Animation;
+import android.view.animation.TranslateAnimation;
 import android.widget.TextView;
 
+import com.example.archermind.tableshu.Data;
 import com.example.archermind.tableshu.R;
 import com.example.archermind.tableshu.logic.NumCreateTool;
 import com.example.archermind.tableshu.logic.RuleCheck;
@@ -38,6 +43,42 @@ public class MainActivity extends AppCompatActivity implements DialogUI.DialogLi
         initView();
         setData();
         startTimer();
+    }
+
+    private void emitBarrage() {
+        final TextView textView = new TextView(this);
+        ((ViewGroup) getWindow().getDecorView()).addView(textView);
+
+        int random = (int) (Math.random() * 10);
+        int index = random % Data.danMu.length;
+
+        ViewGroup.MarginLayoutParams layoutParams = (ViewGroup.MarginLayoutParams) textView.getLayoutParams();
+        layoutParams.setMargins(0, 300, 0, 0);
+        textView.setLayoutParams(layoutParams);
+
+        textView.setText(Data.danMu[index]);
+        textView.setTextColor(Color.RED);
+        textView.setTextSize(20);
+        TranslateAnimation translateAnimation = new TranslateAnimation(0, 1000, 0, 0);
+        textView.setAnimation(translateAnimation);
+        translateAnimation.setDuration(5000);
+        translateAnimation.start();
+        translateAnimation.setAnimationListener(new Animation.AnimationListener() {
+            @Override
+            public void onAnimationStart(Animation animation) {
+
+            }
+
+            @Override
+            public void onAnimationEnd(Animation animation) {
+                ((ViewGroup) getWindow().getDecorView()).removeView(textView);
+            }
+
+            @Override
+            public void onAnimationRepeat(Animation animation) {
+
+            }
+        });
     }
 
     private void startTimer() {
@@ -83,30 +124,39 @@ public class MainActivity extends AppCompatActivity implements DialogUI.DialogLi
 
     private void setData() {
         RuleCheck.getInstance().resetData();
-        mDatas = NumCreateTool.getInstance().createRandomNum(countCar);
         RuleCheck.getInstance().setCar(countCar);
+        changeData();
+    }
+
+    private void changeData() {
+        mDatas = NumCreateTool.getInstance().createRandomNum(countCar);
         mCellGroupView.removeAllViews();
         mCellGroupView.setColumn(countCar);
         for (int i = 0; i < mDatas.size(); i++) {
             final CellView cellView = (CellView) LayoutInflater.from(this).inflate(R.layout.celleview_layout, mCellGroupView,false);
             cellView.setText(String.valueOf(mDatas.get(i)));
             mCellGroupView.addView(cellView);
+            final int finalI = i;
             cellView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
+//                    changeData();  //点一次，变化一次
+//                    if(finalI % 2 == 0){
+                        emitBarrage();
+//                    }
                     Integer integer = Integer.valueOf(cellView.getText().toString());
                     RuleCheck.getInstance().eachClickRuleCheck(integer, new RuleCheck.RuleCheckResultListener() {
                         @Override
                         public void fail() {
                             TimerLogic.getInstance().cancleTimer();
-                            DialogUI.showFinishDialog(MainActivity.this, "You Loosed!",
-                                    "You have do wrong click, have retry !", MainActivity.this);
+                            DialogUI.showFinishDialog(MainActivity.this, "失败了吧！",
+                                    "哈哈，撑死你也就第"+(countCar - startCountCar)+"关了！", MainActivity.this);
                         }
 
                         @Override
                         public void success() {
                             TimerLogic.getInstance().cancleTimer();
-                            DialogUI.showWinDialog(MainActivity.this, "You Win!!!", " Configures You!", MainActivity.this);
+                            DialogUI.showWinDialog(MainActivity.this, "你赢了！", "下一关让肉包子打你，无回！", MainActivity.this);
                         }
                     });
                     mTvCurrent.setText(String.valueOf(integer));
@@ -120,10 +170,4 @@ public class MainActivity extends AppCompatActivity implements DialogUI.DialogLi
         context.startActivity(starter);
     }
 
-
-    @Override
-    protected void onStop() {
-        super.onStop();
-        TimerLogic.getInstance().cancleTimer();
-    }
 }
